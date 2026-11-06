@@ -66,7 +66,7 @@ def read_upload(upload):
 st.sidebar.title('🔷 GRIR Nexus')
 st.sidebar.caption('Validate. Reconcile. Analyze.  ·  Web Edition')
 st.sidebar.caption('Created and tested by Salvatore Bocchetti')
-st.sidebar.info('Public prototype · Uploaded Excel files are processed on the hosting server. Do not upload confidential company data.')
+# Public hosting: keep the privacy caution in the upload workflow, without the large sidebar notice.
 
 with st.sidebar.expander('1 · Upload Excel files',expanded=True):
     current_file=st.file_uploader('Current SAP report (without REC)',type=['xlsx'],key='current')
