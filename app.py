@@ -1,4 +1,4 @@
-"""GR/IR Control Center – public demo web edition.
+"""GRIR Nexus – public demo web edition.
 
 Every session has its own data. No database, shared caches or permanent file storage.
 Uploaded workbooks are processed in short-lived temporary directories.
@@ -21,12 +21,36 @@ from filter_logic import select_positions, filtered_totals
 from analytics import breakdown
 from insights_engine import aging, matrix, movement, priority, signed_summary
 
-st.set_page_config(page_title="GR/IR Control Center · Web", page_icon="📊", layout="wide", initial_sidebar_state="expanded")
-st.markdown('''<style>
-.block-container{padding-top:1.5rem;max-width:1450px}
-[data-testid="stMetric"]{background:rgba(125,136,170,.075);padding:15px;border:1px solid rgba(128,128,128,.13);border-radius:12px}
-.footer{font-size:.78rem;color:#8791a6;text-align:center;padding:30px 0 10px}
-</style>''', unsafe_allow_html=True)
+st.set_page_config(page_title="GRIR Nexus · GR/IR Reconciliation Platform", page_icon="🔷", layout="wide", initial_sidebar_state="expanded")
+st.markdown("""<style>
+/* GRIR Nexus · Modern Dark Analytics — presentation only */
+:root { color-scheme: dark; }
+[data-testid="stAppViewContainer"] { background:linear-gradient(145deg,#0b1320,#101b2b 60%,#111b2a); color:#edf3ff; }
+[data-testid="stSidebar"] { background: #0d1726; border-right:1px solid #2a3952; }
+[data-testid="stSidebar"] h1 { color:#f0f6ff; letter-spacing:-.025em; }
+.block-container{padding-top:1.25rem;max-width:1700px;padding-bottom:2.5rem}
+h1,h2,h3 {letter-spacing:-.025em}
+h1 {font-weight:800}
+[data-testid="stMetric"]{background:linear-gradient(170deg,#1b2b43,#142135);padding:18px 20px;border:1px solid #30435e;border-radius:16px;min-height:118px;box-shadow:0 12px 26px rgba(0,0,0,.14)}
+[data-testid="stMetricLabel"]{color:#b5c7e2}
+[data-testid="stMetricValue"]{color:#f5f8ff;font-weight:750}
+[data-testid="stMetricDelta"]{font-weight:650}
+[data-testid="stTabs"] [data-baseweb="tab-list"]{gap:.45rem;overflow-x:auto;padding:.35rem 0 .7rem;border-bottom:1px solid #2d3e58}
+[data-testid="stTabs"] button[role="tab"]{border-radius:10px;padding:.65rem .9rem;background:#17243a;color:#c4d2e7}
+[data-testid="stTabs"] button[role="tab"][aria-selected="true"]{background:#264676;color:#ffffff}
+[data-testid="stExpander"]{border:1px solid #2b405c;border-radius:14px;background:#121e30}
+[data-testid="stDataFrame"]{border:1px solid #2c415e;border-radius:14px;overflow:hidden}
+[data-testid="stAlert"]{border-radius:12px}
+.stButton>button[kind="primary"],.stDownloadButton>button[kind="primary"]{border-radius:10px;background:#4d7cff;border-color:#4d7cff;color:white;font-weight:700}
+.stButton>button:not([kind="primary"]),.stDownloadButton>button:not([kind="primary"]){border-radius:10px}
+.nexus-hero{padding:1.25rem 1.5rem;border:1px solid #30435e;border-radius:18px;background:linear-gradient(112deg,#182b48,#122038);margin-bottom:1rem}
+.nexus-eyebrow{font-size:.72rem;letter-spacing:.13em;color:#79a8ff;font-weight:800}
+.nexus-title{font-size:2.15rem;font-weight:800;letter-spacing:-.045em;color:#f4f8ff;line-height:1.15;margin:.45rem 0}
+.nexus-sub{font-size:.92rem;color:#b1c4df;margin:.2rem 0 0}
+.nexus-chip{display:inline-block;background:#263c5b;border:1px solid #385379;color:#dbe7fc;padding:5px 10px;border-radius:25px;font-size:.78rem;margin:12px 5px 0 0}
+.nexus-section{color:#f0f5ff;font-size:1.03rem;font-weight:750;margin:1.35rem 0 .6rem}
+.footer{font-size:.78rem;color:#95a8c4;text-align:center;padding:30px 0 10px}
+</style>""",unsafe_allow_html=True)
 
 def amt(v,cur='GBP'):
     symbol={'GBP':'£','EUR':'€','USD':'$'}.get(cur,cur+' ')
@@ -39,8 +63,9 @@ def read_upload(upload):
     if upload is None:return None
     return upload.getvalue()
 
-st.sidebar.title('GR/IR Control Center')
-st.sidebar.caption('Web Edition · Created and tested by Salvatore Bocchetti')
+st.sidebar.title('🔷 GRIR Nexus')
+st.sidebar.caption('Validate. Reconcile. Analyze.  ·  Web Edition')
+st.sidebar.caption('Created and tested by Salvatore Bocchetti')
 st.sidebar.info('Public prototype · Uploaded Excel files are processed on the hosting server. Do not upload confidential company data.')
 
 with st.sidebar.expander('1 · Upload Excel files',expanded=True):
@@ -93,16 +118,15 @@ if trigger:
 
 work=st.session_state.get('work')
 if not work:
-    st.title('GR/IR Control Center')
-    st.subheader('Reconciliation software · Web Edition')
+    st.markdown("""<div class="nexus-hero"><div class="nexus-eyebrow">GR/IR RECONCILIATION PLATFORM</div><div class="nexus-title">GRIR Nexus</div><div class="nexus-sub">Validate. Reconcile. Analyze.</div><span class="nexus-chip">SAP Balance Validation</span><span class="nexus-chip">Automated Reconciliation</span><span class="nexus-chip">Financial Analytics</span></div>""",unsafe_allow_html=True)
+    st.subheader('Start a reconciliation')
     st.write('Upload a **current SAP open-item export** and the **previous complete reconciliation** using the panel on the left. The application checks the SAP closing balance before allowing the official Excel export.')
     st.info('Your files are not included in the application or in its public source code. This initial web version does not retain reconciliation history between visits.')
-    st.markdown('<div class="footer">GR/IR Reconciliation Software | Created and tested by Salvatore Bocchetti</div>',unsafe_allow_html=True)
+    st.markdown('<div class="footer">GRIR Nexus · Validate. Reconcile. Analyze. | Created and tested by Salvatore Bocchetti</div>',unsafe_allow_html=True)
     st.stop()
 
 rows=work['rows']; currency=work['currency']; period=work['period']
-st.title('GR/IR Control Center')
-st.caption(f"{work['entity']} · {period} · {currency} · SAP balance validated")
+st.markdown(f"""<div class="nexus-hero"><div class="nexus-eyebrow">GR/IR RECONCILIATION PLATFORM</div><div class="nexus-title">GRIR Nexus</div><div class="nexus-sub">Validate. Reconcile. Analyze.</div><span class="nexus-chip">Entity: {work['entity']}</span><span class="nexus-chip">Period: {period}</span><span class="nexus-chip">Currency: {currency}</span><span class="nexus-chip">SAP Balance: Verified</span></div>""",unsafe_allow_html=True)
 tabs=st.tabs(['Executive Dashboard','Reconciliation Items','Aging','Movement','Reason & Action Matrix','Top Vendors & Plants','Priority Score','Multi-Entity','Export Excel'])
 
 with st.sidebar.expander('2 · Filters',expanded=True):
@@ -147,18 +171,20 @@ with tabs[0]:
     st.info('All financial totals use the original signed SAP values. Filters affect analysis totals, not the verified SAP closing balance.')
     for message in work['warnings'][:3]:st.caption(message)
     if work['partial_prev']:st.warning('Previous REC is partial. Missing findings are flagged for review; previous period financial balance is calculated from SAP, not the partial REC.')
-    st.subheader('Reason breakdown — filtered positions')
+    st.markdown('<div class="nexus-section">Reason breakdown · Filtered positions</div>',unsafe_allow_html=True)
     grp=breakdown(filtered,'Reason / Discrepancy')
     if grp:
         chart=dataframe([{'Reason':r['name'],'Exposure':r['exposure_minor']/100} for r in grp]).set_index('Reason')
         st.bar_chart(chart,horizontal=True)
-    st.dataframe(dataframe(listing(selected)),use_container_width=True,hide_index=True,height=380)
+    st.markdown('<div class="nexus-section">Reconciliation Data Grid · Filtered positions</div>',unsafe_allow_html=True)
+    st.caption('Drag column dividers to resize · Click column headers to sort · Use the table toolbar to expand or download the view. Sidebar filters update the figures above.')
+    st.dataframe(dataframe(listing(selected)),use_container_width=True,hide_index=True,height=560)
 
 with tabs[1]:
     st.subheader('Reconciliation Items & Review')
     st.caption('Changes are held only in this browser session until you download the Excel. No shared database is used.')
     st.metric('Filtered net total',amt(ft['current_minor'],currency))
-    st.dataframe(dataframe(listing(selected)),use_container_width=True,hide_index=True,height=450)
+    st.dataframe(dataframe(listing(selected)),use_container_width=True,hide_index=True,height=650)
     labels=[f"{p['po']} / {p['item_line']} · {p['match_status']}" for p in selected]
     if labels:
         chosen=st.selectbox('Edit selected position',range(len(labels)),format_func=lambda i:labels[i])
@@ -252,4 +278,4 @@ with tabs[8]:
     if st.session_state.get('download_bytes'):
         st.download_button('Download Official Reconciliation',data=st.session_state['download_bytes'],file_name=st.session_state['download_name'],mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',type='primary')
 
-st.markdown('<div class="footer">GR/IR Reconciliation Software | Created and tested by Salvatore Bocchetti · Web prototype</div>',unsafe_allow_html=True)
+st.markdown('<div class="footer">GRIR Nexus · Validate. Reconcile. Analyze. | Created and tested by Salvatore Bocchetti · Web prototype</div>',unsafe_allow_html=True)
