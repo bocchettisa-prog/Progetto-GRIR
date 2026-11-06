@@ -63,7 +63,8 @@ def read_upload(upload):
     if upload is None:return None
     return upload.getvalue()
 
-st.sidebar.title('🔷 GRIR Nexus')
+st.sidebar.markdown("""<div style="text-align:center;margin:0.3rem 0 1rem"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/DP_World_2021_logo.svg" alt="DP World logo" style="display:block;width:125px;max-width:75%;height:auto;margin:auto"></div>""", unsafe_allow_html=True)
+st.sidebar.title('GRIR Nexus')
 st.sidebar.caption('Validate. Reconcile. Analyze.  ·  Web Edition')
 st.sidebar.caption('Created and tested by Salvatore Bocchetti')
 # Public hosting: keep the privacy caution in the upload workflow, without the large sidebar notice.
