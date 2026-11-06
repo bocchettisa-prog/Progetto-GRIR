@@ -28,7 +28,7 @@ st.markdown("""<style>
 [data-testid="stAppViewContainer"] { background:linear-gradient(145deg,#0b1320,#101b2b 60%,#111b2a); color:#edf3ff; }
 [data-testid="stSidebar"] { background: #0d1726; border-right:1px solid #2a3952; }
 [data-testid="stSidebar"] h1 { color:#f0f6ff; letter-spacing:-.025em; }
-.block-container{padding-top:1.25rem;max-width:1700px;padding-bottom:2.5rem}
+.block-container{padding-top:3.5rem;max-width:1700px;padding-bottom:2.5rem}
 h1,h2,h3 {letter-spacing:-.025em}
 h1 {font-weight:800}
 [data-testid="stMetric"]{background:linear-gradient(170deg,#1b2b43,#142135);padding:18px 20px;border:1px solid #30435e;border-radius:16px;min-height:118px;box-shadow:0 12px 26px rgba(0,0,0,.14)}
@@ -43,7 +43,7 @@ h1 {font-weight:800}
 [data-testid="stAlert"]{border-radius:12px}
 .stButton>button[kind="primary"],.stDownloadButton>button[kind="primary"]{border-radius:10px;background:#4d7cff;border-color:#4d7cff;color:white;font-weight:700}
 .stButton>button:not([kind="primary"]),.stDownloadButton>button:not([kind="primary"]){border-radius:10px}
-.nexus-hero{padding:1.25rem 1.5rem;border:1px solid #30435e;border-radius:18px;background:linear-gradient(112deg,#182b48,#122038);margin-bottom:1rem}
+.nexus-hero{padding:1.25rem 1.5rem;border:1px solid #30435e;border-radius:18px;background:linear-gradient(112deg,#182b48,#122038);margin-top:.5rem;margin-bottom:1rem}
 .nexus-eyebrow{font-size:.72rem;letter-spacing:.13em;color:#79a8ff;font-weight:800}
 .nexus-title{font-size:2.15rem;font-weight:800;letter-spacing:-.045em;color:#f4f8ff;line-height:1.15;margin:.45rem 0}
 .nexus-sub{font-size:.92rem;color:#b1c4df;margin:.2rem 0 0}
