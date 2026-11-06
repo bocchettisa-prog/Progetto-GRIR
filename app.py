@@ -63,7 +63,11 @@ def read_upload(upload):
     if upload is None:return None
     return upload.getvalue()
 
-st.sidebar.markdown("""<div style="text-align:center;margin:0.3rem 0 1rem"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/DP_World_2021_logo.svg" alt="DP World logo" style="display:block;width:125px;max-width:75%;height:auto;margin:auto"></div>""", unsafe_allow_html=True)
+st.sidebar.markdown("""<div style="text-align:center;margin:.3rem 0 1rem">
+<div style="position:relative;width:145px;max-width:80%;margin:auto">
+<img src="https://commons.wikimedia.org/wiki/Special:FilePath/DP_World_2021_logo.svg" alt="DP World logo" style="display:block;width:100%;height:auto">
+<img src="https://commons.wikimedia.org/wiki/Special:FilePath/DP_World_2021_logo.svg" alt="" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:auto;filter:brightness(0) invert(1);clip-path:inset(58% 0 0 0)">
+</div></div>""", unsafe_allow_html=True)
 st.sidebar.title('GRIR Nexus')
 st.sidebar.caption('Validate. Reconcile. Analyze.  ·  Web Edition')
 st.sidebar.caption('Created and tested by Salvatore Bocchetti')
