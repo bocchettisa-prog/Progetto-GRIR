@@ -207,7 +207,17 @@ def interactive_grid(items, *, key, height=600):
         return
     # Selection indices refer to the original displayed DataFrame; sort is purely visual.
     frame=dataframe(data)[displayed]
-    grid_area,detail_area=st.columns([3.5,1.5],gap='medium')
+    expanded=st.toggle(
+        '⛶ Expand Grid — full-width table',
+        value=False,
+        key=f'{key}_expanded',
+        help='Temporarily hide Position Detail and give the grid the full page width. Turn off to restore the detail panel.'
+    )
+    if expanded:
+        grid_area=st.container()
+        detail_area=None
+    else:
+        grid_area,detail_area=st.columns([3.5,1.5],gap='medium')
     with grid_area:
         event=st.dataframe(
             frame,hide_index=True,use_container_width=True,height=height,
@@ -217,6 +227,9 @@ def interactive_grid(items, *, key, height=600):
                 'Current':st.column_config.NumberColumn('Current',format='%.2f'),
             })
     picked=event.selection.rows if event is not None else []
+    if expanded:
+        st.caption('Turn off Expand Grid to restore Position Detail and edit a selected position.')
+        return
     with detail_area:
         st.markdown('#### Position Detail')
         if not picked:
