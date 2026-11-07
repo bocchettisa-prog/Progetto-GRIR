@@ -162,6 +162,101 @@ def listing(items):
              'Reason':effective_reason(p),'Action':effective_action(p),'Full Comment':p.get('comment','')})
     return out
 
+def interactive_grid(items, *, key, height=600):
+    """Native Streamlit selection grid; all accounting fields remain read-only."""
+    st.caption('Select a row to inspect or edit · Sort and resize columns · Use the table toolbar for fullscreen')
+    search=st.text_input('Search all visible positions',placeholder='PO, Vendor, GL, Account Assignment, Comment…',key=f'{key}_search')
+    statuses=sorted({str(p.get('match_status') or '') for p in items})
+    status_filter=st.multiselect('Status',statuses,key=f'{key}_statuses')
+    visible=[]
+    needle=search.strip().casefold()
+    for p in items:
+        if status_filter and str(p.get('match_status') or '') not in status_filter:
+            continue
+        if needle:
+            haystack=' '.join(str(v) for v in (
+                p.get('po') or '',p.get('item_line') or '',p.get('vendor_text') or '',
+                p.get('gl_account') or '',p.get('account_assignment') or '',
+                p.get('match_status') or '',p.get('comment') or '',
+                effective_reason(p),effective_action(p)))
+            if needle not in haystack.casefold():
+                continue
+        visible.append(p)
+
+    data=listing(visible)
+    available_columns=list(data[0]) if data else list(listing(items)[0]) if items else [
+        'PO','Item Line','Vendor','GL','Account Assignment','Plant','Previous','Current',
+        'Status','Reason','Action','Full Comment']
+    displayed=st.multiselect(
+        'Visible columns',available_columns,default=available_columns,
+        key=f'{key}_columns',help='Hide or restore columns without changing the original reconciliation')
+    if not displayed:
+        st.warning('Choose at least one column to display.')
+        return
+    total_current=sum(int(p['current_minor']) for p in visible)
+    total_previous=sum(int(p['previous_minor']) for p in visible if p.get('previous_minor') is not None)
+    from classification import is_potential_reversal
+    total_reversal=sum(int(p['current_minor']) for p in visible if is_potential_reversal(p))
+    a,b,c,d=st.columns(4)
+    a.metric('Visible positions',len(visible))
+    b.metric('Visible current net',amt(total_current,currency))
+    c.metric('Visible previous net',amt(total_previous,currency))
+    d.metric('Visible potential reversal',amt(abs(total_reversal),currency))
+    if not visible:
+        st.info('No positions match the selected filters.')
+        return
+    # Selection indices refer to the original displayed DataFrame; sort is purely visual.
+    frame=dataframe(data)[displayed]
+    grid_area,detail_area=st.columns([3.5,1.5],gap='medium')
+    with grid_area:
+        event=st.dataframe(
+            frame,hide_index=True,use_container_width=True,height=height,
+            on_select='rerun',selection_mode='single-row',key=f'{key}_grid',
+            column_config={
+                'Previous':st.column_config.NumberColumn('Previous',format='%.2f'),
+                'Current':st.column_config.NumberColumn('Current',format='%.2f'),
+            })
+    picked=event.selection.rows if event is not None else []
+    with detail_area:
+        st.markdown('#### Position Detail')
+        if not picked:
+            st.info('Click a row in the grid to open its reconciliation details.')
+            return
+        idx=int(picked[0])
+        if not 0<=idx<len(visible):
+            st.warning('Selection is no longer available after filtering. Choose a row again.')
+            return
+        item=visible[idx]
+        st.caption(f"PO {item['po']}  ·  Item {item['item_line']}")
+        st.write(f"**Status:** {item.get('match_status') or '—'}")
+        st.write(f"**Previous:** {amt(int(item['previous_minor']),currency) if item.get('previous_minor') is not None else '—'}")
+        st.write(f"**Current:** {amt(int(item['current_minor']),currency)}")
+        st.write(f"**Reason:** {effective_reason(item)}")
+        st.write(f"**Action:** {effective_action(item)}")
+        with st.form(f'{key}_detail_form'):
+            vendor_new=st.text_input('Vendor / Text',value=item.get('vendor_text') or '')
+            gl_new=st.text_input('GL Account',value=item.get('gl_account') or '')
+            ass_new=st.text_input('Account Assignment',value=item.get('account_assignment') or '')
+            posting_new=st.text_input('Posting Date',value=str(item.get('posting_date') or ''))
+            comment_new=st.text_area('Full Comment / Reason',value=item.get('comment') or '',height=150)
+            choices=['Automatic','Not Specified','GR Reversal Required','GR Reversed (Completed)','Needs Review']
+            existing=item.get('action_override') or 'Automatic'
+            action_new=st.selectbox('Corrective Action Override',choices,
+                                    index=choices.index(existing) if existing in choices else 0)
+            saved=st.form_submit_button('Save position changes',type='primary',use_container_width=True)
+        if saved:
+            item.update(vendor_text=vendor_new,gl_account=gl_new,
+                        account_assignment=ass_new,posting_date=posting_new,
+                        comment=comment_new,action_override='' if action_new=='Automatic' else action_new)
+            if int(item['current_minor'])!=0:
+                item['match_status']=('To Be Reviewed' if not comment_new.strip() else
+                    ('Amount Changed - Still Unresolved'
+                     if item.get('previous_minor') is not None and
+                     int(item['previous_minor'])!=int(item['current_minor']) else 'Still Open'))
+            st.success('Changes saved in this session. Export the official Excel to retain them.')
+            st.rerun()
+
+
 with tabs[0]:
     previous=work['previous_total']; current=work['total']; delta=current-previous
     a,b,c,d=st.columns(4)
@@ -182,33 +277,12 @@ with tabs[0]:
         chart=dataframe([{'Reason':r['name'],'Exposure':r['exposure_minor']/100} for r in grp]).set_index('Reason')
         st.bar_chart(chart,horizontal=True)
     st.markdown('<div class="nexus-section">Reconciliation Data Grid · Filtered positions</div>',unsafe_allow_html=True)
-    st.caption('Drag column dividers to resize · Click column headers to sort · Use the table toolbar to expand or download the view. Sidebar filters update the figures above.')
-    st.dataframe(dataframe(listing(selected)),use_container_width=True,hide_index=True,height=560)
+    interactive_grid(selected,key='executive',height=570)
 
 with tabs[1]:
-    st.subheader('Reconciliation Items & Review')
-    st.caption('Changes are held only in this browser session until you download the Excel. No shared database is used.')
-    st.metric('Filtered net total',amt(ft['current_minor'],currency))
-    st.dataframe(dataframe(listing(selected)),use_container_width=True,hide_index=True,height=650)
-    labels=[f"{p['po']} / {p['item_line']} · {p['match_status']}" for p in selected]
-    if labels:
-        chosen=st.selectbox('Edit selected position',range(len(labels)),format_func=lambda i:labels[i])
-        item=selected[chosen]
-        with st.form('edit_position'):
-            c1,c2=st.columns(2)
-            vendor_new=c1.text_input('Vendor/Text',value=item.get('vendor_text') or '')
-            gl_new=c2.text_input('GL Account',value=item.get('gl_account') or '')
-            ass_new=c1.text_input('Account Assignment',value=item.get('account_assignment') or '')
-            posting_new=c2.text_input('Posting Date',value=str(item.get('posting_date') or ''))
-            comment_new=st.text_area('Full Comment / Reason',value=item.get('comment') or '')
-            action_new=st.selectbox('Corrective action override', ['Automatic','Not Specified','GR Reversal Required','GR Reversed (Completed)','Needs Review'],index=(['Automatic','Not Specified','GR Reversal Required','GR Reversed (Completed)','Needs Review'].index(item.get('action_override') or 'Automatic') if (item.get('action_override') or 'Automatic') in ['Automatic','Not Specified','GR Reversal Required','GR Reversed (Completed)','Needs Review'] else 0))
-            saved=st.form_submit_button('Save changes')
-        if saved:
-            item.update(vendor_text=vendor_new,gl_account=gl_new,account_assignment=ass_new,posting_date=posting_new,comment=comment_new,action_override='' if action_new=='Automatic' else action_new)
-            if item['current_minor']!=0:
-                item['match_status']='To Be Reviewed' if not comment_new.strip() else ('Amount Changed - Still Unresolved' if item.get('previous_minor') is not None and item['previous_minor']!=item['current_minor'] else 'Still Open')
-            st.success('Saved in this session. Download the workbook to retain your edits.')
-            st.rerun()
+    st.subheader('Advanced Data Grid & Position Review')
+    st.caption('All changes stay in this browser session until you download the official Excel. SAP amounts and matching keys are read-only.')
+    interactive_grid(selected,key='review',height=720)
 
 with tabs[2]:
     st.subheader('Aging Analysis')
