@@ -132,7 +132,7 @@ if not work:
 
 rows=work['rows']; currency=work['currency']; period=work['period']
 st.markdown(f"""<div class="nexus-hero"><div class="nexus-eyebrow">GR/IR RECONCILIATION PLATFORM</div><div class="nexus-title">GRIR Nexus</div><div class="nexus-sub">Validate. Reconcile. Analyze.</div><span class="nexus-chip">Entity: {work['entity']}</span><span class="nexus-chip">Period: {period}</span><span class="nexus-chip">Currency: {currency}</span><span class="nexus-chip">SAP Balance: Verified</span></div>""",unsafe_allow_html=True)
-tabs=st.tabs(['Executive Dashboard','Reconciliation Items','Aging','Movement','Reason & Action Matrix','Top Vendors & Plants','Priority Score','Multi-Entity','Export Excel'])
+tabs=st.tabs(['Executive Dashboard','Reconciliation Items','Full-Width Workspace','Aging','Movement','Reason & Action Matrix','Top Vendors & Plants','Priority Score','Multi-Entity','Export Excel'])
 
 with st.sidebar.expander('2 · Filters',expanded=True):
     po=st.text_input('Purchase Order',key='f_po')
@@ -162,7 +162,7 @@ def listing(items):
              'Reason':effective_reason(p),'Action':effective_action(p),'Full Comment':p.get('comment','')})
     return out
 
-def interactive_grid(items, *, key, height=600):
+def interactive_grid(items, *, key, height=600, stacked_details=False):
     """Native Streamlit selection grid; all accounting fields remain read-only."""
     st.caption('Select a row to inspect or edit · Sort and resize columns · Use the table toolbar for fullscreen')
     search=st.text_input('Search all visible positions',placeholder='PO, Vendor, GL, Account Assignment, Comment…',key=f'{key}_search')
@@ -207,17 +207,22 @@ def interactive_grid(items, *, key, height=600):
         return
     # Selection indices refer to the original displayed DataFrame; sort is purely visual.
     frame=dataframe(data)[displayed]
-    expanded=st.toggle(
-        '⛶ Expand Grid — full-width table',
-        value=False,
-        key=f'{key}_expanded',
-        help='Temporarily hide Position Detail and give the grid the full page width. Turn off to restore the detail panel.'
-    )
-    if expanded:
+    if stacked_details:
+        expanded=False
         grid_area=st.container()
-        detail_area=None
+        detail_area=st.container(border=True)
     else:
-        grid_area,detail_area=st.columns([3.5,1.5],gap='medium')
+        expanded=st.toggle(
+            '⛶ Expand Grid — full-width table',
+            value=False,
+            key=f'{key}_expanded',
+            help='Temporarily hide Position Detail and give the grid the full page width. Turn off to restore the detail panel.'
+        )
+        if expanded:
+            grid_area=st.container()
+            detail_area=None
+        else:
+            grid_area,detail_area=st.columns([3.5,1.5],gap='medium')
     with grid_area:
         event=st.dataframe(
             frame,hide_index=True,use_container_width=True,height=height,
@@ -298,13 +303,18 @@ with tabs[1]:
     interactive_grid(selected,key='review',height=720)
 
 with tabs[2]:
+    st.subheader('Full-Width Reconciliation Workspace')
+    st.caption('The grid uses the full page width. Select a row to view and edit its Position Detail beneath the table. Use the table toolbar to maximize the grid.')
+    interactive_grid(selected,key='full_workspace',height=680,stacked_details=True)
+
+with tabs[3]:
     st.subheader('Aging Analysis')
     st.caption('Based on recorded Posting Date. Missing or invalid dates remain in Unknown; dates are never inferred.')
     ag=aging(selected,period)
     st.dataframe(dataframe([{'Bucket':a['bucket'],'Items':a['count'],'Net Amount':a['net_minor']/100,'Exposure':a['exposure_minor']/100} for a in ag]),use_container_width=True,hide_index=True)
     st.bar_chart(dataframe({'Bucket':[a['bucket'] for a in ag],'Exposure':[a['exposure_minor']/100 for a in ag]}).set_index('Bucket'))
 
-with tabs[3]:
+with tabs[4]:
     st.subheader('Movement Analysis')
     st.caption('This bridge reconciles the full two SAP snapshots and is not narrowed by dashboard filters.')
     m=movement(rows,work['old_rows'])
@@ -313,12 +323,12 @@ with tabs[3]:
     st.metric('Bridge validation',amt(m['previous_minor']+m['new_minor']+m['resolved_minor']+m['changed_minor']-m['current_minor'],currency))
     st.caption(f"New: {m['new_count']} · Resolved: {m['resolved_count']} · Changed: {m['changed_count']}")
 
-with tabs[4]:
+with tabs[5]:
     st.subheader('Reason & Corrective Action Matrix')
     mx=matrix(selected)
     st.dataframe(dataframe([{'Reason':v['reason'],'Action':v['action'],'Items':v['count'],'Net':v['net_minor']/100,'Exposure':v['exposure_minor']/100,'Potential Reversal':v['reversal_minor']/100} for v in mx]),use_container_width=True,hide_index=True)
 
-with tabs[5]:
+with tabs[6]:
     st.subheader('Top Vendors & Plants')
     for dim in ('Vendor','Plant'):
         data=breakdown(filtered,dim)[:10]
@@ -327,13 +337,13 @@ with tabs[5]:
             st.bar_chart(dataframe([{'Name':d['name'],'Exposure':d['exposure_minor']/100} for d in data]).set_index('Name'),horizontal=True)
             st.dataframe(dataframe([{'Name':d['name'],'Items':d['open_count'],'Net':d['net_minor']/100,'Exposure':d['exposure_minor']/100} for d in data]),hide_index=True,use_container_width=True)
 
-with tabs[6]:
+with tabs[7]:
     st.subheader('Priority Score')
     st.caption('Worklist suggestion based on amount, age and review status; it is not an accounting risk certification.')
     score=priority(selected,period)
     st.dataframe(dataframe([{'Score':v['score'],'PO':v['position']['po'],'Line':v['position']['item_line'],'Amount':v['position']['current_minor']/100,'Age (days)':v['age'],'Priority Factors':v['why']} for v in score]),use_container_width=True,hide_index=True)
 
-with tabs[7]:
+with tabs[8]:
     st.subheader('Multi-Entity — Current Browser Session')
     st.caption('This free public prototype does not preserve or share user histories. Only reports loaded in this session are available.')
     history=st.session_state.get('session_history',{})
@@ -343,7 +353,7 @@ with tabs[7]:
         entries.append({'Entity':entity,'Period':hperiod,'Currency':st.session_state.get('session_currencies',{}).get((entity,hperiod),'?'),'Signed Net':summary['net_minor']/100,'Positions':summary['count'],'Potential Reversal':summary['reversal_minor']/100})
     st.dataframe(dataframe(entries),hide_index=True,use_container_width=True)
 
-with tabs[8]:
+with tabs[9]:
     st.subheader('Export Official Excel')
     st.caption('The exported workbook contains the current SAP worksheet, the corporate REC based on your previous template, Reconciliation Status, and SAP Balance Validation.')
     with st.form('export_details'):
